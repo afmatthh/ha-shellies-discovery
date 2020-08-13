@@ -95,6 +95,7 @@ ATTR_TILT = "tilt"
 ATTR_TOTAL = "total"
 ATTR_TOTAL_RETURNED = "total_returned"
 ATTR_TOTALWORKTIME = "totalworktime"
+ATTR_UPTIME = "uptime"
 ATTR_VIBRATION = "vibration"
 ATTR_VOLTAGE = "voltage"
 ATTR_WHITE = "white"
@@ -155,6 +156,7 @@ DEVICE_CLASS_SIGNAL_STRENGTH = "signal_strength"
 DEVICE_CLASS_SMOKE = "smoke"
 DEVICE_CLASS_SOUND = "sound"
 DEVICE_CLASS_TEMPERATURE = "temperature"
+DEVICE_CLASS_TIMESTAMP = "timestamp"
 DEVICE_CLASS_VIBRATION = "vibration"
 DEVICE_CLASS_WINDOW = "window"
 
@@ -164,6 +166,7 @@ KEY_DEVICE = "dev"
 KEY_DEVICE_CLASS = "dev_cla"
 KEY_EXPIRE_AFTER = "exp_aft"
 KEY_FORCE_UPDATE = "frc_upd"
+KEY_ICON = "icon"
 KEY_IDENTIFIERS = "ids"
 KEY_JSON_ATTRIBUTES_TEMPLATE = "json_attr_tpl"
 KEY_JSON_ATTRIBUTE_TOPIC = "json_attr_t"
@@ -241,6 +244,7 @@ TPL_SHORTPUSH_LONGPUSH = "{% if value_json.event == ^SL^ %}ON{% else %}OFF{% end
 TPL_SSID = "{{value_json[^wifi_sta^].ssid}}"
 TPL_TEMPERATURE = "{{value|float|round(1)}}"
 TPL_TILT = "{{value|float}}"
+TPL_UPTIME = "{{(as_timestamp(now())-value_json.uptime)|timestamp_local}}"
 TPL_TRIPLE_SHORTPUSH = "{% if value_json.event == ^SSS^ %}ON{% else %}OFF{% endif %}"
 TPL_VOLTAGE = "{{value|float|round(1)}}"
 
@@ -407,10 +411,10 @@ if id.rsplit("-", 1)[0] == "shelly1":
     bin_sensors_classes = [None]
     bin_sensors_tpls = [TPL_NEW_FIRMWARE]
     bin_sensors_topics = [TOPIC_ANNOUNCE]
-    sensors = [ATTR_RSSI, ATTR_SSID]
-    sensors_units = [UNIT_DB, None]
-    sensors_classes = [DEVICE_CLASS_SIGNAL_STRENGTH, None]
-    sensors_tpls = [TPL_RSSI, TPL_SSID]
+    sensors = [ATTR_RSSI, ATTR_SSID, ATTR_UPTIME]
+    sensors_units = [UNIT_DB, None, None]
+    sensors_classes = [DEVICE_CLASS_SIGNAL_STRENGTH, None, DEVICE_CLASS_TIMESTAMP]
+    sensors_tpls = [TPL_RSSI, TPL_SSID, TPL_UPTIME]
     ext_humi_sensors = 1
     ext_temp_sensors = 3
     ext_sensors = 3  # to remove
@@ -1437,7 +1441,7 @@ for sensor_id in range(len(sensors)):
         sensor_name = f"{device_name} {sensors[sensor_id].upper()}"
     else:
         sensor_name = f"{device_name} {sensors[sensor_id].title()}"
-    if sensors[sensor_id] in [ATTR_RSSI, ATTR_SSID]:
+    if sensors[sensor_id] in [ATTR_RSSI, ATTR_SSID, ATTR_UPTIME]:
         state_topic = "~info"
     elif relays > 0 or white_lights > 0:
         state_topic = f"~{sensors[sensor_id]}"
@@ -1477,6 +1481,8 @@ for sensor_id in range(len(sensors)):
         payload[KEY_PAYLOAD_NOT_AVAILABLE] = VALUE_FALSE
     if sensors_tpls[sensor_id]:
         payload[KEY_VALUE_TEMPLATE] = sensors_tpls[sensor_id]
+    if sensors[sensor_id] == ATTR_SSID:
+        payload[KEY_ICON] = "mdi:wifi"
     if no_battery_sensor and sensors[sensor_id] == ATTR_BATTERY:
         payload = ""
     if id.lower() in ignored:
